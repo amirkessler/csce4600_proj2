@@ -90,7 +90,7 @@ void SJF(struct list process[50], int num)
 		int job = 9999999;
 		//set job time to a very high number, then check for min job time
 		for(pro = 0;pro<num;pro++){
-			if(process[pro].runTime<job && process[pro].endTime == 0){
+			if(process[pro].runTime<job && process[pro].endTime == 0 && process[pro].arrival<time){
 				job = process[pro].runTime;
 				fin = pro;
 			}

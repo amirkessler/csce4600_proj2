@@ -32,6 +32,8 @@ void FIFO(struct list process[50], int num);
 void SJF(struct list process[50], int num);
 void other(struct list process[50], int num);
 void output(struct list process[50], int fin);
+void printer(struct list process);
+void averager(int turner, int waiter, int responder, int contexter, int tot);
 
 int main(void)
 {
@@ -42,10 +44,11 @@ int main(void)
 
 	//Prompts the user to enter a file name
 	printf("Please enter a file name: ");
-	scanf("%s", filename);
+	// scanf("%s", filename);
 
 	//Opens the file, exits program if the file is not found/doesn't exist
-	fp = fopen(filename, "r");
+	// fp = fopen(filename, "r");
+	fp = fopen("input.txt", "r");
 	if(fp == NULL){
 		printf("Error: File not found");
 		return 0;
@@ -59,18 +62,66 @@ int main(void)
 		process[num].turn = 0;
 		process[num].wait = 0;
 		process[num].response = 0;
+		process[num].startTime = 0;
+
+		// testing
+		// printf("%s %d %d %d\n", process[num].processID, process[num].arrival, process[num].runTime, process[num].priority);
+
 		num++;
 	}
 
 	fclose(fp);
 
-	printf("Process ID     Arrival     Run Time     Priority     Start Time     End Time     Turnaround Time     Wait Time     Response Time\n");
-	printf("--------------------------------------------------------------------------------------------------------------------------------\n");
+	printf("\njob      ariv      runt      prio      strt      endt      turn      wait      resp\n");
+	printf("-----------------------------------------------------------------------------------\n");
+
+	FIFO(process, num);
+
 	return 0;
 }
 
 void FIFO(struct list process[50], int num)
 {
+	// totals
+	int starter = 0;
+	int ender = 0;
+	int turner = 0;
+	int waiter = 0;
+	int responder = 0;
+	int contexter = 0;
+
+	// counter
+	int i = 0;
+	
+	// loop through all processes
+	for (i=0; i<num; i++) {
+
+		// start times
+		if (i!=0) process[i].startTime = process[i-1].endTime;
+		starter += process[i].startTime;
+
+		// end times
+		process[i].endTime = process[i].startTime + process[i].runTime; 
+		ender += process[i].endTime;
+
+		// turnaround times
+		process[i].turn = process[i].endTime - process[i].arrival;
+		turner += process[i].turn;
+
+		// wait times
+		process[i].wait = process[i].startTime - process[i].arrival;
+		waiter += process[i].wait;
+
+		// response times
+		if (i!=0) process[i].response = process[i-1].endTime;
+		responder += process[i].response;
+
+		// print values in table
+		printer(process[i]);
+	}	
+
+	// average values
+	averager(turner, waiter, responder, contexter, num);
 
 }
 //Schedule: Shortest Job First
@@ -135,3 +186,26 @@ void output(struct list process[50], int fin)
 	&process[fin].runTime, &process[fin].priority, &process[fin].startTime, 
 	&process[fin].endTime, &process[fin].turn, &process[fin].wait, &process[fin].response);
 }
+
+// print result 
+void printer(struct list process) {
+	printf("%-5s %7d %9d %9d %9d %9d %9d %9d %9d\n", 
+		process.processID, 
+		process.arrival, 
+		process.runTime, 
+		process.priority, 
+		process.startTime, 
+		process.endTime, 
+		process.turn, 
+		process.wait, 
+		process.response);
+}
+
+// calculate/print averages
+void averager(int turner, int waiter, int responder, int contexter, int tot) {
+	printf("Average Turnaround Time = %10.2f\n", (float)(turner / tot));
+	printf("Average Wait Time       = %10.2f\n", (float)(waiter / tot));
+	printf("Average Response Time   = %10.2f\n", (float)(responder / tot));
+	printf("Number Context Switches = %10.2f\n", (float)contexter);
+}
+

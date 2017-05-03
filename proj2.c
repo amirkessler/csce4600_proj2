@@ -35,7 +35,6 @@ void tableHeader(char *name);
 void FIFO(struct list process[50], int num);
 void SJF(struct list process[50], int num);
 void SRT(struct list process[50], int num);
-void output(struct list process[50], int fin);
 void printer(struct list process);
 void averager(int turner, int waiter, int responder, int contexter, int tot);
 
@@ -48,12 +47,12 @@ int main(void)
 	int i;
 
 	//Prompts the user to enter a file name
-	printf("\nPlease enter a file name: input.txt\n");
-	// scanf("%s", filename);
+	printf("\nPlease enter a file name: \n");
+	scanf("%s", filename);
 
 	//Opens the file, exits program if the file is not found/doesn't exist
-	// fp = fopen(filename, "r");
-	fp = fopen("input.txt", "r");
+	fp = fopen(filename, "r");
+	//fp = fopen("input.txt", "r");
 	if(fp == NULL){
 		printf("Error: File not found");
 		return 0;
@@ -76,6 +75,7 @@ int main(void)
 	}
 
 	fclose(fp);
+	num--;
 
 	// save copies of process to preserve original data
 	struct list processFIFO[50];
@@ -86,6 +86,7 @@ int main(void)
 	// call scheduling processes here
 	// use copies of process so they are preserved
 	FIFO(processFIFO, num);
+	SJF(processSJF, num);
 	SRT(processSRT, num);
 
 	return 0;
@@ -152,18 +153,23 @@ void FIFO(struct list process[50], int num) {
 //the shortest job to complete
 void SJF(struct list process[50], int num)
 {
-	//bool to check when all processes run
-	bool complete = false;
+	tableHeader("SJF");
+	printf("%d\n", process[0].runTime);
+
 	int time = 0;
 	int pro;
 	int fin;
+	int numComplete = 0;
+	int turner = 0;
+	int waiter = 0;
+	int responder = 0;
 
 	//while loop to loop through all process
-	while(complete == false){
+	while(numComplete<num){
 		int job = 9999999;
 		//set job time to a very high number, then check for min job time
 		for(pro = 0;pro<num;pro++){
-			if(process[pro].runTime<job && process[pro].endTime == 0 && process[pro].arrival<time){
+			if(process[pro].runTime<job && process[pro].endTime == 0 && process[pro].arrival<=time){
 				job = process[pro].runTime;
 				fin = pro;
 			}
@@ -171,27 +177,18 @@ void SJF(struct list process[50], int num)
 
 		//increment time by job time, then set that to the process' end and turnaround time
 		//output the completed job
+		waiter += time;
+		responder += time;
+		process[fin].startTime = process[fin].wait = process[fin].response = time;
 		time += process[fin].runTime;
+		turner += time;
 		process[fin].endTime = time;
 		process[fin].turn = time;
-		output(process, fin);
+		printer(process[fin]);
+		numComplete++;
 
-		//increment the start, wait, and response times for waiting process
-		//also checks if any processes are still waiting
-		bool com = false;
-		for(pro = 0;pro<num;pro++){
-			if(process[pro].endTime == 0){
-				com = true;
-				process[pro].startTime += time;
-				process[pro].wait += time;
-				process[pro].response += time;
-			}
-		}
-
-		//if no more processes are waiting, then the schedule is complete
-		if(com == false)
-			complete = true;
 	}
+	averager(turner, waiter, responder, 0, num);
 }
 
 // round robin?
@@ -302,15 +299,6 @@ void SRT(struct list process[50], int num) {
 
 	averager(turner, waiter, responder, 0, num);
 
-}
-
-//Output function
-//Called upon completion of a process,
-//outputs the info of that process to the screen
-void output(struct list process[50], int fin) {
-	sprintf("%s %12d %13d %13d %15d %20d %14d %18d\n", process[fin].processID, &process[fin].arrival, 
-	&process[fin].runTime, &process[fin].priority, &process[fin].startTime, 
-	&process[fin].endTime, &process[fin].turn, &process[fin].wait, &process[fin].response);
 }
 
 // print result 
